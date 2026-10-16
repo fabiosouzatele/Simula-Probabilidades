@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Simuladores educacionais interativos para explorar probabilidade e estatística.">
+<title>Simuladores Educacionais</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--text:#f3f6fc;--muted:#b5c1d5;--blue:#7dd3fc;--mint:#a7f3d0;--border:rgba(190,210,240,.18)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(ellipse at 12% 8%,rgba(14,165,233,.22),transparent 38%),radial-gradient(ellipse at 90% 90%,rgba(16,185,129,.16),transparent 34%),var(--bg);line-height:1.55}
+.wrap{width:min(1080px,calc(100% - 36px));margin:0 auto;padding:62px 0 30px}header{max-width:760px;margin-bottom:34px}
+.author{margin:0 0 12px;color:var(--muted);font-size:.96rem;font-weight:700;letter-spacing:.02em}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--border);border-radius:999px;color:var(--mint);background:rgba(15,23,42,.65);font-size:.8rem;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
+h1{font-size:clamp(2.35rem,6vw,4.35rem);line-height:1.04;margin:20px 0 16px;letter-spacing:-.045em}.intro{font-size:clamp(1rem,2vw,1.18rem);color:var(--muted);max-width:690px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}.card{display:flex;flex-direction:column;min-height:320px;padding:26px;border-radius:22px;border:1px solid var(--border);background:linear-gradient(145deg,rgba(25,39,64,.97),rgba(13,22,39,.96));box-shadow:0 20px 55px rgba(0,0,0,.18);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.card:hover{transform:translateY(-4px);border-color:rgba(125,211,252,.55);box-shadow:0 24px 60px rgba(0,0,0,.28)}.icon{width:56px;height:56px;display:grid;place-items:center;border-radius:16px;font-size:1.75rem;margin-bottom:21px;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.22)}.card:nth-child(2) .icon{background:rgba(167,243,208,.12);border-color:rgba(167,243,208,.22)}
+h2{margin:0 0 10px;font-size:1.42rem;letter-spacing:-.02em}.card p{color:var(--muted);margin:0 0 24px}.tag{font-size:.8rem;color:var(--blue);margin-bottom:10px;font-weight:750}.card:nth-child(2) .tag{color:var(--mint)}
+.link{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:auto;padding:13px 16px;border-radius:12px;color:#071321;background:var(--blue);text-decoration:none;font-weight:800;transition:filter .18s ease}.card:nth-child(2) .link{background:var(--mint)}.link:hover{filter:brightness(1.08)}.link:focus-visible{outline:3px solid white;outline-offset:3px}
+footer{margin-top:34px;padding-top:20px;border-top:1px solid var(--border);color:#8fa0ba;font-size:.9rem}@media(max-width:480px){.wrap{padding-top:38px}.card{padding:22px;min-height:300px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="author">Professor Fábio Souza · IFSC/SJ</p>
+<div class="eyebrow"><span aria-hidden="true">✦</span> Laboratório interativo</div>
+<h1>Simuladores<br>Educacionais</h1>
+<p class="intro">Explore conceitos de probabilidade por meio de experiências interativas. Escolha um simulador e compare os resultados observados com as previsões da teoria.</p>
+</header>
+<section class="grid" aria-label="Lista de simuladores">
+<article class="card">
+<div class="icon" aria-hidden="true">🚪</div><div class="tag">Probabilidade · Tomada de decisão</div>
+<h2>Problema de Monty Hall</h2>
+<p>Explore o famoso problema das três portas e observe como os resultados mudam quando você mantém ou troca sua escolha.</p>
+<a class="link" href="./monty-hall.html" aria-label="Abrir simulador de Monty Hall"><span>Abrir simulador</span><span aria-hidden="true">→</span></a>
+</article>
+<article class="card">
+<div class="icon" aria-hidden="true">📊</div><div class="tag">Probabilidade · Frequência</div>
+<h2>Sorteios e probabilidades</h2>
+<p>Realize sorteios virtuais, observe a frequência dos resultados e compare a simulação com a distribuição teórica.</p>
+<a class="link" href="./simulador_educativo_probabilidade_sorteio.html" aria-label="Abrir simulador educativo de probabilidade"><span>Abrir simulador</span><span aria-hidden="true">→</span></a>
+</article>
+</section>
+<footer>Material para fins educacionais. Os simuladores permitem explorar conceitos e comparar resultados experimentais com previsões teóricas.</footer>
+</main>
+</body>
+</html>
