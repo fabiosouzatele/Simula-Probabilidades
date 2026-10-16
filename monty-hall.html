@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jogo Monty Hall — versão 4</title>
+<style>
+:root{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;--bg:#f4f6fb;--card:#fff;--accent:#1769d2;--ink:#1d2735;--muted:#5d6878;--line:#e1e6ef}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);padding:20px;display:flex;justify-content:center}
+.app{width:1040px;max-width:100%;background:var(--card);padding:22px;border-radius:14px;box-shadow:0 8px 32px rgba(20,35,60,.09)}
+h1{font-size:1.45rem;margin:0 0 8px} h2{font-size:1.1rem;margin:0 0 10px}
+.home-link{display:inline-block;margin:0 0 14px;padding:9px 12px;border:1px solid var(--accent);border-radius:8px;background:#fff;color:var(--accent);text-decoration:none;font-weight:600}.home-link:hover{background:#eef5ff}
+p{line-height:1.5}.muted,.small{color:var(--muted);font-size:.9rem}
+.rules{background:#f7f9fd;border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px 0}
+.rules ol{margin:8px 0 0;padding-left:22px}.rules li{margin:5px 0}
+.doors{display:flex;gap:16px;justify-content:center;margin:20px 0;flex-wrap:wrap}
+.door{width:clamp(100px,22vw,170px);height:210px;background:#eaf0fa;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:14px;cursor:pointer;user-select:none;border:3px solid transparent;transition:transform .12s,box-shadow .12s}
+.door:hover{transform:translateY(-3px);box-shadow:0 7px 18px rgba(15,40,120,.1)}.door.locked{cursor:default}.door.revealed{background:#fff}
+.door .label{font-weight:700}.door .gift{font-size:2.4rem}.door .hint{font-size:.8rem;color:var(--muted)}
+.controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+button,select,input{font:inherit}button{background:var(--accent);color:#fff;border:1px solid var(--accent);padding:9px 12px;border-radius:8px;cursor:pointer}button:hover{filter:brightness(.96)}button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:#fff;color:var(--accent)}button.danger{background:#fff;color:#b42318;border-color:#efc5c2}
+input[type=number],select{padding:8px;border-radius:8px;border:1px solid #cfd6e2;background:#fff}input[type=number]{width:95px}
+.stats{margin-top:17px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat{background:#fafbff;padding:12px;border-radius:9px;border:1px solid var(--line)}.stat .value{font-size:1.25rem;font-weight:700;margin-top:4px}
+.section{margin-top:24px}.section-head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.history-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}table{width:100%;border-collapse:collapse;font-size:.86rem}th,td{padding:9px 10px;text-align:center;border-bottom:1px solid #edf0f5;white-space:nowrap}th{background:#f7f8fc}tr:last-child td{border-bottom:none}
+.chart-wrap{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px}canvas{display:block;width:100%;height:320px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.86rem;margin:8px 2px}.legend span{display:inline-flex;align-items:center;gap:6px}.swatch{width:20px;height:3px;display:inline-block;background:#1769d2}.swatch.dash{background:repeating-linear-gradient(90deg,#6b7280 0 5px,transparent 5px 8px)}.swatch.mid{background:repeating-linear-gradient(90deg,#a16207 0 5px,transparent 5px 8px)}
+.notice{padding:10px 12px;background:#f7f9fd;border-radius:8px;color:var(--muted);font-size:.88rem;margin-top:12px}
+footer{margin-top:22px;border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:.85rem}
+@media(max-width:620px){body{padding:8px}.app{padding:14px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.door{height:165px}.door .gift{font-size:2rem}canvas{height:260px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <a class="home-link" href="https://fabiosouzatele.github.io/Simula-Probabilidades/">← Página inicial</a>
+  <h1>Jogo Monty Hall — versão 4</h1>
+  <p class="muted">Explore o problema das três portas e compare estratégias por simulação.</p>
+
+  <section class="rules">
+    <h2>Como jogar</h2>
+    <ol>
+      <li>Há três portas: atrás de uma está o carro; atrás das outras duas, cabras.</li>
+      <li>Clique em uma porta para fazer sua escolha inicial.</li>
+      <li>O apresentador, que sabe onde está o carro, abre uma das outras portas mostrando uma cabra.</li>
+      <li>Você pode manter a escolha ou trocar para a outra porta fechada. Clique na porta desejada ou use <b>Mudar escolha</b>.</li>
+      <li>O resultado aparece quando a rodada termina. Para começar outra, clique em <b>Reiniciar jogo</b>.</li>
+    </ol>
+    <p class="small"><b>Dica:</b> teoricamente, trocar vence em 2/3 das rodadas (66,7%); manter vence em 1/3 (33,3%). Escolher aleatoriamente entre manter e trocar dá 50% de chance.</p>
+  </section>
+
+  <div class="doors" id="doors" aria-label="Três portas"></div>
+  <div class="controls">
+    <button id="reset">Reiniciar jogo</button>
+    <button id="switchBtn" class="ghost">Mudar escolha</button>
+    <label class="small" for="simCount">Simular jogos:</label>
+    <input id="simCount" type="number" min="1" max="1000000" value="1000">
+    <button id="runSim">Executar simulação</button>
+    <label class="small" for="strategy">Estratégia:</label>
+    <select id="strategy">
+      <option value="switch">Sempre trocar</option>
+      <option value="stay">Nunca trocar</option>
+      <option value="random">Aleatório (50% trocar)</option>
+    </select>
+  </div>
+  <p id="gameMessage" role="status" aria-live="polite" class="notice">Escolha uma porta para começar.</p>
+
+  <section class="stats" aria-label="Contadores da sessão">
+    <div class="stat"><div class="small">Jogos simulados/acumulados</div><div class="value" id="total">0</div></div>
+    <div class="stat"><div class="small">Vitórias</div><div class="value" id="wins">0</div></div>
+    <div class="stat"><div class="small">Derrotas</div><div class="value" id="losses">0</div></div>
+    <div class="stat"><div class="small">Taxa de vitória</div><div class="value" id="rate">0%</div></div>
+  </section>
+  <div class="controls" style="margin-top:12px">
+    <button id="clearCounters" class="ghost">Zerar contadores</button>
+    <span class="small">Zera somente os contadores; o histórico é mantido.</span>
+  </div>
+
+  <section class="section">
+    <div class="section-head"><h2>Comparação das estratégias</h2><span class="small">Taxa de vitória por simulação registrada</span></div>
+    <div class="chart-wrap">
+      <canvas id="chart" aria-label="Gráfico de taxa de vitória por simulação"></canvas>
+      <div class="legend">
+        <span><i class="swatch"></i> Sempre trocar</span>
+        <span><i class="swatch dash"></i> Nunca trocar</span>
+        <span><i class="swatch mid"></i> Aleatório</span>
+        <span class="small">Linhas teóricas: 66,7%, 33,3% e 50%.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Histórico das simulações</h2>
+      <div class="controls">
+        <button id="exportCsv" class="ghost">Exportar histórico (CSV)</button>
+        <button id="clearHistory" class="danger">Apagar histórico</button>
+      </div>
+    </div>
+    <p class="small">O histórico fica salvo neste navegador. Apagar o histórico não zera os contadores, e zerar os contadores não apaga o histórico.</p>
+    <div class="history-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Data/hora</th><th>Estratégia</th><th>Jogos</th><th>Vitórias</th><th>Derrotas</th><th>Taxa simulada</th><th>Teórica</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+    <p id="historyEmpty" class="muted">Ainda não há simulações registradas.</p>
+  </section>
+  <footer>Versão 4. O histórico é guardado no armazenamento local deste navegador (localStorage). Para transferi-lo ou analisá-lo em uma planilha, use a exportação CSV.</footer>
+</main>
+<script>
+'use strict';
+const NUM_PORTAS = 3;
+const STORAGE_KEY = 'montyHallHistoryV4';
+const doorsEl = document.getElementById('doors');
+let total = 0, wins = 0, losses = 0;
+let state = {prizeIndex:null, pickedIndex:null, revealedIndex:null, stage:'pick'};
+let history = loadHistory();
+let simulationNumber = history.reduce((max,item)=>Math.max(max,Number(item.id)||0),0);
+
+function loadHistory(){
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(saved) ? saved.filter(x => x && typeof x === 'object') : [];
+  } catch(e) { return []; }
+}
+function saveHistory(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); }
+  catch(e) { alert('Não foi possível salvar o histórico neste navegador. Verifique as configurações de armazenamento.'); }
+}
+function strategyName(strategy){
+  return strategy === 'switch' ? 'Sempre trocar' : strategy === 'stay' ? 'Nunca trocar' : 'Aleatório';
+}
+function theoreticalProbability(strategy){
+  return strategy === 'switch' ? 2/3 : strategy === 'stay' ? 1/3 : 1/2;
+}
+function resetState(){
+  state.prizeIndex = Math.floor(Math.random()*NUM_PORTAS);
+  state.pickedIndex = null; state.revealedIndex = null; state.stage = 'pick';
+  document.getElementById('gameMessage').textContent = 'Escolha uma porta para começar.';
+  renderDoors();
+}
+function renderDoors(){
+  doorsEl.innerHTML = '';
+  for(let i=0;i<NUM_PORTAS;i++){
+    const d = document.createElement('button');
+    d.type = 'button';
+    d.className = 'door' + (state.stage !== 'pick' ? ' locked' : '');
+    d.style.color = '#1d2735';
+    d.style.borderColor = state.pickedIndex === i ? 'rgba(23,105,210,.9)' : 'transparent';
+    if(state.revealedIndex === i) d.classList.add('revealed');
+    d.disabled = state.stage === 'done' || (state.stage === 'reveal' && i === state.revealedIndex);
+    const label = document.createElement('div'); label.className='label'; label.textContent='Porta '+(i+1);
+    const gift = document.createElement('div'); gift.className='gift';
+    gift.textContent = state.stage === 'done' || state.revealedIndex === i ? (state.prizeIndex === i ? '🚗' : '🐐') : '❓';
+    const hint = document.createElement('div'); hint.className='hint';
+    hint.textContent = state.pickedIndex === i ? 'Sua escolha' : (state.revealedIndex === i ? 'Revelada' : 'Clique para escolher');
+    d.append(label,gift,hint);
+    d.addEventListener('click',()=>onDoorClick(i));
+    doorsEl.appendChild(d);
+  }
+}
+function hostReveal(picked){
+  const options=[];
+  for(let j=0;j<NUM_PORTAS;j++) if(j!==picked && j!==state.prizeIndex) options.push(j);
+  return options[Math.floor(Math.random()*options.length)];
+}
+function onDoorClick(i){
+  if(state.stage === 'pick'){
+    state.pickedIndex=i; state.revealedIndex=hostReveal(i); state.stage='reveal';
+    document.getElementById('gameMessage').textContent='O apresentador abriu uma porta com cabra. Mantenha sua escolha ou troque para a outra porta fechada.';
+    renderDoors();
+  } else if(state.stage === 'reveal' && i !== state.revealedIndex){
+    state.pickedIndex=i; finalizeRound();
+  }
+}
+function finalizeRound(){
+  state.stage='done';
+  const won = state.pickedIndex === state.prizeIndex;
+  total++; if(won) wins++; else losses++;
+  updateStats();
+  document.getElementById('gameMessage').textContent = won ? 'Você ganhou o carro! Reinicie para jogar novamente.' : 'Desta vez não foi o carro. Reinicie para jogar novamente.';
+  renderDoors();
+}
+function updateStats(){
+  document.getElementById('total').textContent=total.toLocaleString('pt-BR');
+  document.getElementById('wins').textContent=wins.toLocaleString('pt-BR');
+  document.getElementById('losses').textContent=losses.toLocaleString('pt-BR');
+  document.getElementById('rate').textContent=total ? (100*wins/total).toLocaleString('pt-BR',{maximumFractionDigits:1,minimumFractionDigits:1})+'%' : '0%';
+}
+function clearCounters(){ total=0; wins=0; losses=0; updateStats(); }
+
+function runSimulation(n,strategy){
+  let w=0;
+  for(let t=0;t<n;t++){
+    const prize=Math.floor(Math.random()*NUM_PORTAS);
+    const pick=Math.floor(Math.random()*NUM_PORTAS);
+    const options=[];
+    for(let j=0;j<NUM_PORTAS;j++) if(j!==pick && j!==prize) options.push(j);
+    const revealed=options[Math.floor(Math.random()*options.length)];
+    let finalPick=pick;
+    if(strategy==='switch'){
+      for(let j=0;j<NUM_PORTAS;j++) if(j!==pick && j!==revealed) finalPick=j;
+    } else if(strategy==='random' && Math.random()<0.5){
+      for(let j=0;j<NUM_PORTAS;j++) if(j!==pick && j!==revealed) finalPick=j;
+    }
+    if(finalPick===prize) w++;
+  }
+  const l=n-w;
+  total+=n; wins+=w; losses+=l; updateStats();
+  addHistory(strategy,n,w,l);
+  // Show a representative completed round after the simulation.
+  state.prizeIndex=Math.floor(Math.random()*NUM_PORTAS);
+  state.pickedIndex=Math.floor(Math.random()*NUM_PORTAS);
+  const options=[]; for(let j=0;j<NUM_PORTAS;j++) if(j!==state.pickedIndex && j!==state.prizeIndex) options.push(j);
+  state.revealedIndex=options[Math.floor(Math.random()*options.length)];
+  if(strategy==='switch' || (strategy==='random' && Math.random()<0.5)){
+    for(let j=0;j<NUM_PORTAS;j++) if(j!==state.pickedIndex && j!==state.revealedIndex) state.pickedIndex=j;
+  }
+  state.stage='done';
+  document.getElementById('gameMessage').textContent=`Simulação concluída: ${n.toLocaleString('pt-BR')} jogos com a estratégia “${strategyName(strategy)}”.`;
+  renderDoors();
+}
+function addHistory(strategy,n,w,l){
+  simulationNumber++;
+  history.unshift({id:simulationNumber, timestamp:new Date().toISOString(), strategy, games:n, wins:w, losses:l, rate:100*w/n, theoretical:100*theoreticalProbability(strategy)});
+  saveHistory(); renderHistory(); drawChart();
+}
+function renderHistory(){
+  const body=document.getElementById('historyBody');
+  body.innerHTML='';
+  for(const item of history){
+    const tr=document.createElement('tr');
+    const date=new Date(item.timestamp);
+    const cells=[item.id, Number.isNaN(date.getTime())?'—':date.toLocaleString('pt-BR'), strategyName(item.strategy), Number(item.games).toLocaleString('pt-BR'), Number(item.wins).toLocaleString('pt-BR'), Number(item.losses).toLocaleString('pt-BR'), Number(item.rate).toLocaleString('pt-BR',{maximumFractionDigits:2,minimumFractionDigits:2})+'%', Number(item.theoretical).toLocaleString('pt-BR',{maximumFractionDigits:2,minimumFractionDigits:2})+'%'];
+    for(const value of cells){const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}
+    body.appendChild(tr);
+  }
+  document.getElementById('historyEmpty').hidden=history.length>0;
+}
+function clearHistory(){
+  if(!history.length){alert('O histórico já está vazio.');return;}
+  if(!confirm('Apagar todo o histórico salvo neste navegador? Essa ação não pode ser desfeita.')) return;
+  history=[]; simulationNumber=0; saveHistory(); renderHistory(); drawChart();
+}
+function exportCsv(){
+  if(!history.length){alert('Não há histórico para exportar.');return;}
+  const rows=[['Número','Data/hora','Estratégia','Jogos','Vitórias','Derrotas','Taxa simulada (%)','Taxa teórica (%)']];
+  const csvCell=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+  for(const item of [...history].reverse()){
+    rows.push([item.id,new Date(item.timestamp).toLocaleString('pt-BR'),strategyName(item.strategy),item.games,item.wins,item.losses,Number(item.rate).toFixed(2),Number(item.theoretical).toFixed(2)]);
+  }
+  const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='historico_monty_hall.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function drawChart(){
+  const canvas=document.getElementById('chart');
+  const rect=canvas.getBoundingClientRect();
+  const width=Math.max(300,rect.width||700), height=320, dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(width*dpr); canvas.height=Math.round(height*dpr);
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,width,height);
+  const pad={left:52,right:18,top:18,bottom:42}, plotW=width-pad.left-pad.right, plotH=height-pad.top-pad.bottom;
+  const x=i=>pad.left+(history.length<=1?plotW/2:(history.length-1-i)*plotW/(history.length-1));
+  const y=v=>pad.top+(100-v)/100*plotH;
+  ctx.font='12px system-ui, sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let v=0;v<=100;v+=20){ctx.strokeStyle='#e8ecf3';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.left,y(v));ctx.lineTo(width-pad.right,y(v));ctx.stroke();ctx.fillStyle='#5d6878';ctx.fillText(v+'%',pad.left-8,y(v));}
+  const lines=[{value:100*2/3,color:'#1769d2',dash:[]},{value:100/3,color:'#6b7280',dash:[5,4]},{value:50,color:'#a16207',dash:[5,4]}];
+  for(const line of lines){ctx.save();ctx.strokeStyle=line.color;ctx.setLineDash(line.dash);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(pad.left,y(line.value));ctx.lineTo(width-pad.right,y(line.value));ctx.stroke();ctx.restore();}
+  const series=[{key:'switch',color:'#1769d2'},{key:'stay',color:'#6b7280'},{key:'random',color:'#a16207'}];
+  for(const s of series){
+    const items=history.map((item,i)=>({item,i})).filter(o=>o.item.strategy===s.key);
+    if(!items.length)continue;
+    ctx.save();ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();
+    items.forEach((o,j)=>{const px=x(o.i),py=y(Number(o.item.rate));if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});
+    ctx.stroke();
+    for(const o of items){ctx.beginPath();ctx.fillStyle=s.color;ctx.arc(x(o.i),y(Number(o.item.rate)),3,0,Math.PI*2);ctx.fill();}
+    ctx.restore();
+  }
+  ctx.fillStyle='#5d6878';ctx.textAlign='center';ctx.textBaseline='top';
+  if(history.length){ctx.fillText('Simulações registradas (mais antigas à esquerda)',pad.left+plotW/2,height-pad.bottom+13);}
+  else {ctx.fillText('Execute uma simulação para começar o gráfico',pad.left+plotW/2,height/2);}
+}
+document.getElementById('reset').addEventListener('click',resetState);
+document.getElementById('switchBtn').addEventListener('click',()=>{
+  if(state.stage!=='reveal'){alert('Escolha uma porta primeiro e aguarde o apresentador revelar uma cabra.');return;}
+  for(let i=0;i<NUM_PORTAS;i++) if(i!==state.pickedIndex && i!==state.revealedIndex){state.pickedIndex=i;break;}
+  finalizeRound();
+});
+document.getElementById('runSim').addEventListener('click',()=>{
+  const n=Math.min(1000000,Math.max(1,Math.floor(Number(document.getElementById('simCount').value)||1)));
+  document.getElementById('simCount').value=n;
+  runSimulation(n,document.getElementById('strategy').value);
+});
+document.getElementById('clearCounters').addEventListener('click',clearCounters);
+document.getElementById('clearHistory').addEventListener('click',clearHistory);
+document.getElementById('exportCsv').addEventListener('click',exportCsv);
+window.addEventListener('resize',drawChart);
+resetState();updateStats();renderHistory();drawChart();
+</script>
+</body>
+</html>
